@@ -5,8 +5,8 @@ body {
 }
 
 .bg-multi {
-	height: 100vh;
-	width: 100vw;
+	max-height: 100vh;
+	max-width: 100vw;
 	background:
 		url('rosetta.png'), 
 		url('moon.png'),
