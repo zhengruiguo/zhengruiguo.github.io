@@ -1,7 +1,12 @@
 html,
 body {
-	background: url('starts.jpg');
+	max-height: 100vh;
+	max-width: 100vw;
+	background: background: url('starts.jpg');
+	background-size: 75vmax, 50vw, cover;
+	background-position: top 50px right 80px, 40px 40px, top center;
 	background-repeat: no-repeat;
+	
 	margin: 0;
 	padding: 0;
 }
@@ -10,7 +15,6 @@ body {
 	max-height: 100vh;
 	max-width: 100vw;
 	background:
-		url('moon.png');
 		/*
 		url('rosetta.png'), 
 		url('moon.png'),
