@@ -1,6 +1,7 @@
 html,
 body {
-	background: url('moon.png');
+	background: url('starts.jpg');
+	background-repeat: no-repeat;
 	margin: 0;
 	padding: 0;
 }
