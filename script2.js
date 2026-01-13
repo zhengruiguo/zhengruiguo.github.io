@@ -32,7 +32,7 @@ fetch('questions2.json')
     })
     .then(data => {
         questions = data;
-        totalNumSpan.textContent = questions.length;
+        totalNumSpan.textContent = questions.length//10;
         renderQuestion(currentIndex);
     })
     .catch(err => {
