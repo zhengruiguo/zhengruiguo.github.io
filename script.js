@@ -25,7 +25,7 @@ const currentSpan = document.getElementById('current');
 const totalNumSpan = document.getElementById('total-num');
 
 // 加载题库
-fetch('questions2.json')
+fetch('questions1.json')
     .then(response => {
         if (!response.ok) throw new Error('题库文件不存在');
         return response.json();
