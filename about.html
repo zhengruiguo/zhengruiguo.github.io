@@ -1,187 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub 静态网页功能示例</title>
-    <style>
-        /* 全局样式 */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        /* 导航栏样式 */
-        nav {
-            background-color: #333;
-            color: white;
-            padding: 10px;
-        }
-
-        nav ul {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-        }
-
-        nav ul li {
-            margin: 0 10px;
-        }
-
-        nav ul li a {
-            color: white;
-            text-decoration: none;
-        }
-
-        /* 内容区域样式 */
-        .content {
-            padding: 20px;
-        }
-
-        /* 图片样式 */
-        .image-container {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .image-container img {
-            max-width: 100%;
-            height: auto;
-        }
-
-        /* 表单样式 */
-        form {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-
-        form label {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        form input,
-        form textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-        }
-
-        form button {
-            background-color: #333;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-
-        /* 弹窗样式 */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.4);
-        }
-
-        .modal-content {
-            background-color: #fefefe;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-    </style>
+    <title>通用做题程序（带解析）</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-    <!-- 导航栏 -->
-    <nav>
-        <ul>
-            <li><a href="#">首页</a></li>
-            <li><a href="#">关于</a></li>
-            <li><a href="#">联系我们</a></li>
-        </ul>
-    </nav>
-
-    <!-- 内容区域 -->
-    <div class="content">
-        <h1>欢迎来到我的静态网页</h1>
-        <p>这是一个展示多种功能的 GitHub 静态网页示例。</p>
-
-        <!-- 图片展示 -->
-        <div class="image-container">
-            <img src="https://dummyimage.com/800x600/ff0000/ffffff" alt="示例图片">
+    <div class="container">
+        <!-- 答题进度 -->
+        <div class="progress">
+            <span id="current">第1题</span>
+            <span id="total">/ 共<span id="total-num">0</span>题</span>
         </div>
 
-        <!-- 表单 -->
-        <form>
-            <label for="name">姓名:</label>
-            <input type="text" id="name" name="name" required>
-            <label for="email">邮箱:</label>
-            <input type="email" id="email" name="email" required>
-            <label for="message">留言:</label>
-            <textarea id="message" name="message" rows="4" required></textarea>
-            <button type="submit">提交</button>
-        </form>
-
-        <!-- 弹窗按钮 -->
-        <button id="open-modal">打开弹窗</button>
-
-        <!-- 弹窗 -->
-        <div id="my-modal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <p>这是一个弹窗示例。</p>
+        <!-- 题目区域 -->
+        <div class="question-box" id="question-box">
+            <h3 id="question-title"></h3>
+            <!-- 新增：题目图片（可选） -->
+            <div id="question-img" style="margin: 15px 0; display: none;"></div>
+            <div class="options" id="options"></div>
+            <!-- 新增：解析区域（答题时隐藏） -->
+            <div class="analysis" id="analysis" style="margin-top: 20px; display: none;">
+                <strong>答案：</strong>
+                <span id="analysis-text"></span>
             </div>
+        </div>
+
+        <!-- 按钮区域 -->
+        <div class="btn-group">
+            <button id="prev-btn" disabled>上一题</button>
+            <button id="next-btn">下一题</button>
+            <button id="submit-btn" style="display: none;">提交试卷</button>
+            <!-- 新增：解析按钮 -->
+            <button id="analysis-btn" style="display: inline-block; background-color: #ffc107; color: #333;">查看答案</button>
+        </div>
+
+        <!-- 结果区域（新增错题列表） -->
+        <div class="result-box" id="result-box" style="display: none;">
+            <h2>答题结果</h2>
+            <p>你的得分：<span id="score">0</span>分</p>
+            <p>正确率：<span id="accuracy">0</span>%</p>
+            <p>错题数量：<span id="wrong-num">0</span>题</p>
+            <!-- 新增：错题列表 -->
+            <div class="wrong-list" id="wrong-list" style="margin-top: 20px; text-align: left;">
+                <h3>错题详情</h3>
+                <div id="wrong-items"></div>
+            </div>
+            <button id="reset-btn">重新答题</button>
         </div>
     </div>
 
-    <script>
-        // 弹窗功能脚本
-        var modal = document.getElementById("my-modal");
-        var btn = document.getElementById("open-modal");
-        var span = document.getElementsByClassName("close")[0];
-
-        btn.onclick = function () {
-            modal.style.display = "block";
-        }
-
-        span.onclick = function () {
-            modal.style.display = "none";
-        }
-
-        window.onclick = function (event) {
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
-
-</html>    
+</html>
