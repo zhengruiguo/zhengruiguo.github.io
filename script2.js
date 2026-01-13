@@ -1,8 +1,9 @@
-
 // 全局变量
 let questions = [];
+let originalQuestions = []; // 保存完整原始题库
 let currentIndex = 0;
 let userAnswers = {}; // 存储用户答案 {题id: 选项}
+const DEFAULT_QUESTION_COUNT = 10; // 配置：每次出题数量
 
 // DOM元素
 const questionBox = document.getElementById('question-box');
@@ -24,6 +25,25 @@ const resetBtn = document.getElementById('reset-btn');
 const currentSpan = document.getElementById('current');
 const totalNumSpan = document.getElementById('total-num');
 
+// 工具函数1：Fisher-Yates 洗牌算法（打乱数组）
+function shuffleArray(array) {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+}
+
+// 工具函数2：随机抽取指定数量的题目
+function getRandomQuestions(sourceArray, count) {
+    // 深拷贝原始题库，避免修改原数据
+    const tempArray = [...sourceArray];
+    // 洗牌后截取前count道题
+    const shuffledArray = shuffleArray(tempArray);
+    return shuffledArray.slice(0, count);
+}
+
 // 加载题库
 fetch('questions2.json')
     .then(response => {
@@ -31,15 +51,17 @@ fetch('questions2.json')
         return response.json();
     })
     .then(data => {
-        questions = data;
-        totalNumSpan.textContent = questions.length;
+        originalQuestions = data; // 保存完整题库
+        // 抽取10道题（若题库不足10道则取全部）
+        questions = getRandomQuestions(originalQuestions, DEFAULT_QUESTION_COUNT);
+        totalNumSpan.textContent = questions.length; // 更新总题数显示
         renderQuestion(currentIndex);
     })
     .catch(err => {
         questionTitle.textContent = '加载失败：' + err.message;
     });
 
-// 渲染题目（新增图片和解析渲染）
+// 渲染题目（保持不变）
 function renderQuestion(index) {
     const q = questions[index];
     currentSpan.textContent = `第${index + 1}题`;
@@ -68,7 +90,7 @@ function renderQuestion(index) {
     });
 
     // 渲染解析（默认隐藏）
-    analysisText.textContent = q.answer || '暂无答案';
+    analysisText.textContent = q.analysis || '暂无解析';
     analysis.style.display = 'none';
 
     // 按钮状态
@@ -82,7 +104,7 @@ function renderQuestion(index) {
     }
 }
 
-// 保存当前题答案
+// 保存当前题答案（保持不变）
 function saveAnswer() {
     const selectedOpt = document.querySelector('input[name="option"]:checked');
     if (selectedOpt) {
@@ -90,32 +112,32 @@ function saveAnswer() {
     }
 }
 
-// 上一题
+// 上一题事件
 prevBtn.addEventListener('click', () => {
     saveAnswer();
     currentIndex--;
     renderQuestion(currentIndex);
 });
 
-// 下一题
+// 下一题事件
 nextBtn.addEventListener('click', () => {
     saveAnswer();
     currentIndex++;
     renderQuestion(currentIndex);
 });
 
-// 新增：查看解析按钮事件
+// 查看解析事件
 analysisBtn.addEventListener('click', () => {
     if (analysis.style.display === 'none') {
         analysis.style.display = 'block';
-        analysisBtn.textContent = '隐藏答案';
+        analysisBtn.textContent = '隐藏解析';
     } else {
         analysis.style.display = 'none';
-        analysisBtn.textContent = '查看答案';
+        analysisBtn.textContent = '查看解析';
     }
 });
 
-// 提交试卷（新增错题列表生成）
+// 提交试卷事件
 submitBtn.addEventListener('click', () => {
     saveAnswer();
     calculateResult();
@@ -126,7 +148,7 @@ submitBtn.addEventListener('click', () => {
     resultBox.style.display = 'block';
 });
 
-// 计算得分
+// 计算得分（保持不变）
 function calculateResult() {
     let correctNum = 0;
     questions.forEach(q => {
@@ -140,7 +162,7 @@ function calculateResult() {
     wrongNumSpan.textContent = wrongNum;
 }
 
-// 新增：生成错题列表
+// 生成错题列表（保持不变）
 function generateWrongList() {
     wrongItems.innerHTML = '';
     questions.forEach(q => {
@@ -151,17 +173,20 @@ function generateWrongList() {
                 <p><strong>题目：</strong>${q.question}</p>
                 <p class="user-answer">你的答案：${userAnswers[q.id] || '未作答'}</p>
                 <p class="correct-answer">正确答案：${q.answer}</p>
-                <div class="analysis"><strong>答案：</strong>${q.analysis || '暂无答案'}</div>
+                <div class="analysis"><strong>解析：</strong>${q.analysis || '暂无解析'}</div>
             `;
             wrongItems.appendChild(wrongItem);
         }
     });
 }
 
-// 重新答题
+// 重新答题事件（修改：重新抽取10道题）
 resetBtn.addEventListener('click', () => {
     userAnswers = {};
     currentIndex = 0;
+    // 重新随机抽取10道题
+    questions = getRandomQuestions(originalQuestions, DEFAULT_QUESTION_COUNT);
+    totalNumSpan.textContent = questions.length; // 更新总题数
     questionBox.style.display = 'block';
     document.querySelector('.btn-group').style.display = 'flex';
     document.querySelector('.progress').style.display = 'flex';
