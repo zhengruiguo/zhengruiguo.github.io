@@ -2,8 +2,8 @@
 let questions = [];
 let originalQuestions = []; // 保存完整原始题库
 let currentIndex = 0;
-let userAnswers = {}; // 存储用户答案 {题id: 选项}
-const DEFAULT_QUESTION_COUNT = 10; // 配置：每次出题数量
+let userAnswers = {}; // 存储用户答案 {题id: [选项1, 选项2]}（多选改为数组）
+const DEFAULT_QUESTION_COUNT = 10; // 每次出题数量
 
 // DOM元素
 const questionBox = document.getElementById('question-box');
@@ -37,11 +37,17 @@ function shuffleArray(array) {
 
 // 工具函数2：随机抽取指定数量的题目
 function getRandomQuestions(sourceArray, count) {
-    // 深拷贝原始题库，避免修改原数据
     const tempArray = [...sourceArray];
-    // 洗牌后截取前count道题
     const shuffledArray = shuffleArray(tempArray);
     return shuffledArray.slice(0, count);
+}
+
+// 工具函数3：对比多选答案是否完全一致（排序后对比）
+function isAnswerCorrect(userAns, correctAns) {
+    // 统一排序后转为字符串对比（避免 ["A","C"] 和 ["C","A"] 判定为错误）
+    const sortedUser = (userAns || []).sort().join('');
+    const sortedCorrect = (correctAns || []).sort().join('');
+    return sortedUser === sortedCorrect;
 }
 
 // 加载题库
@@ -51,23 +57,22 @@ fetch('questions2.json')
         return response.json();
     })
     .then(data => {
-        originalQuestions = data; // 保存完整题库
-        // 抽取10道题（若题库不足10道则取全部）
+        originalQuestions = data;
         questions = getRandomQuestions(originalQuestions, DEFAULT_QUESTION_COUNT);
-        totalNumSpan.textContent = questions.length; // 更新总题数显示
+        totalNumSpan.textContent = questions.length;
         renderQuestion(currentIndex);
     })
     .catch(err => {
         questionTitle.textContent = '加载失败：' + err.message;
     });
 
-// 渲染题目（保持不变）
+// 渲染题目（修改：单选改复选框）
 function renderQuestion(index) {
     const q = questions[index];
     currentSpan.textContent = `第${index + 1}题`;
     questionTitle.textContent = q.question;
 
-    // 渲染图片（可选）
+    // 渲染图片
     if (q.img) {
         questionImg.style.display = 'block';
         questionImg.innerHTML = `<img src="${q.img}" alt="题目图片">`;
@@ -75,22 +80,25 @@ function renderQuestion(index) {
         questionImg.style.display = 'none';
     }
 
-    // 渲染选项
+    // 渲染选项（单选框改为复选框）
     options.innerHTML = '';
     q.options.forEach((opt, idx) => {
         const optionId = `opt-${idx}`;
-        const isChecked = userAnswers[q.id] === String.fromCharCode(65 + idx);
+        const optionVal = String.fromCharCode(65 + idx);
+        // 检查当前选项是否被用户选中（多选需判断数组包含）
+        const isChecked = (userAnswers[q.id] || []).includes(optionVal) ? 'checked' : '';
+        
         const optionItem = document.createElement('div');
         optionItem.className = 'option-item';
         optionItem.innerHTML = `
-            <input type="radio" name="option" id="${optionId}" value="${String.fromCharCode(65 + idx)}" ${isChecked ? 'checked' : ''}>
-            <label for="${optionId}">${String.fromCharCode(65 + idx)}. ${opt}</label>
+            <input type="checkbox" name="option" id="${optionId}" value="${optionVal}" ${isChecked}>
+            <label for="${optionId}">${optionVal}. ${opt}</label>
         `;
         options.appendChild(optionItem);
     });
 
-    // 渲染解析（默认隐藏）
-    analysisText.textContent = q.analysis || '暂无解析';
+    // 渲染解析
+    analysisText.textContent = q.answer || '暂无答案';
     analysis.style.display = 'none';
 
     // 按钮状态
@@ -104,12 +112,12 @@ function renderQuestion(index) {
     }
 }
 
-// 保存当前题答案（保持不变）
+// 保存当前题答案（修改：保存多选答案为数组）
 function saveAnswer() {
-    const selectedOpt = document.querySelector('input[name="option"]:checked');
-    if (selectedOpt) {
-        userAnswers[questions[currentIndex].id] = selectedOpt.value;
-    }
+    const selectedOpts = document.querySelectorAll('input[name="option"]:checked');
+    // 将选中的选项转为数组
+    const selectedVals = Array.from(selectedOpts).map(opt => opt.value);
+    userAnswers[questions[currentIndex].id] = selectedVals;
 }
 
 // 上一题事件
@@ -130,10 +138,10 @@ nextBtn.addEventListener('click', () => {
 analysisBtn.addEventListener('click', () => {
     if (analysis.style.display === 'none') {
         analysis.style.display = 'block';
-        analysisBtn.textContent = '隐藏解析';
+        analysisBtn.textContent = '隐藏答案';
     } else {
         analysis.style.display = 'none';
-        analysisBtn.textContent = '查看解析';
+        analysisBtn.textContent = '查看答案';
     }
 });
 
@@ -148,11 +156,12 @@ submitBtn.addEventListener('click', () => {
     resultBox.style.display = 'block';
 });
 
-// 计算得分（保持不变）
+// 计算得分（修改：适配多选答案判定）
 function calculateResult() {
     let correctNum = 0;
     questions.forEach(q => {
-        if (userAnswers[q.id] === q.answer) correctNum++;
+        // 使用自定义函数对比多选答案
+        if (isAnswerCorrect(userAnswers[q.id], q.answer)) correctNum++;
     });
     const total = questions.length;
     const score = (correctNum / total) * 100;
@@ -162,31 +171,34 @@ function calculateResult() {
     wrongNumSpan.textContent = wrongNum;
 }
 
-// 生成错题列表（保持不变）
+// 生成错题列表（修改：适配多选答案显示）
 function generateWrongList() {
     wrongItems.innerHTML = '';
     questions.forEach(q => {
-        if (userAnswers[q.id] !== q.answer) {
+        if (!isAnswerCorrect(userAnswers[q.id], q.answer)) {
             const wrongItem = document.createElement('div');
             wrongItem.className = 'wrong-item';
+            // 格式化答案显示：数组转字符串（如 ["A","C"] → "A、C"）
+            const userAnsText = (userAnswers[q.id] || []).join('、') || '未作答';
+            const correctAnsText = (q.answer || []).join('、');
+            
             wrongItem.innerHTML = `
                 <p><strong>题目：</strong>${q.question}</p>
-                <p class="user-answer">你的答案：${userAnswers[q.id] || '未作答'}</p>
-                <p class="correct-answer">正确答案：${q.answer}</p>
-                <div class="analysis"><strong>解析：</strong>${q.analysis || '暂无解析'}</div>
+                <p class="user-answer">你的答案：${userAnsText}</p>
+                <p class="correct-answer">正确答案：${correctAnsText}</p>
+                <div class="analysis"><strong>答案：</strong>${q.answer || '暂无答案'}</div>
             `;
             wrongItems.appendChild(wrongItem);
         }
     });
 }
 
-// 重新答题事件（修改：重新抽取10道题）
+// 重新答题事件
 resetBtn.addEventListener('click', () => {
     userAnswers = {};
     currentIndex = 0;
-    // 重新随机抽取10道题
     questions = getRandomQuestions(originalQuestions, DEFAULT_QUESTION_COUNT);
-    totalNumSpan.textContent = questions.length; // 更新总题数
+    totalNumSpan.textContent = questions.length;
     questionBox.style.display = 'block';
     document.querySelector('.btn-group').style.display = 'flex';
     document.querySelector('.progress').style.display = 'flex';
