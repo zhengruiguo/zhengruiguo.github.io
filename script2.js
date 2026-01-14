@@ -138,10 +138,10 @@ nextBtn.addEventListener('click', () => {
 analysisBtn.addEventListener('click', () => {
     if (analysis.style.display === 'none') {
         analysis.style.display = 'block';
-        analysisBtn.textContent = '隐藏答案';
+        analysisBtn.textContent = '查看隐藏答案';
     } else {
         analysis.style.display = 'none';
-        analysisBtn.textContent = '查看答案';
+        analysisBtn.textContent = '查看隐藏答案';
     }
 });
 
